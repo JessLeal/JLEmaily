@@ -23,20 +23,22 @@ passport.use(
       callbackURL: '/auth/google/callback',
       proxy: true,
     },
-    (accessToken, refreshToken, profile, done) => {
-      User.findOne({ googleId: profile.id })
-        .then((existingUser) => {
-          if (!existingUser) {
-            new User({ googleId: profile.id })
-              //This part has issues (the whole if else statement)
-              .save()
-              .then((user) => done(null, user))
-              .catch((err) => console.log(`${err.message} ERRRRRRRRRRRRRR`));
-          } else {
-            done(null, existingUser);
+    async (accessToken, refreshToken, profile, done) => {
+      const existingUser = await User.findOne({ googleId: profile.id });
+      try {
+        if (!existingUser) {
+          try {
+            const user = await new User({ googleId: profile.id }).save();
+            done(null, user);
+          } catch (err) {
+            console.log(`${err.message} ERRRRRRRRRRRRRR`);
           }
-        })
-        .catch((err) => console.log(`${err.message} ERRRRRRRRRRRRRR`));
+        } else {
+          done(null, existingUser);
+        }
+      } catch (err) {
+        console.log(`${err.message} ERRRRRRRRRRRRRR`);
+      }
     }
   )
 );
